@@ -1,7 +1,7 @@
 program matrix_multiply
     implicit none
 
-    integer, parameter :: max_size = 1000000
+    integer, parameter :: max_size = 1000000  ! Максимальный размер матрицы/вектора
     integer :: n, i1, i2
     real :: A(5, max_size)  ! Хранение диагоналей в двумерном массиве
     real :: F(max_size), result(max_size)
@@ -10,7 +10,7 @@ program matrix_multiply
     call read_matrix('matrix.txt', n, i1, i2, A)
     call read_vector('vector.txt', n, F)
     call multiply_matrix_vector(n, i1, i2, A, F, result)
-    call write_vector('result_1.txt', n, F)
+    call write_vector('result_1.txt', n, result)
 
     print *, 'Matrix-vector multiplication completed successfully.'
 
@@ -82,33 +82,30 @@ contains
     end subroutine read_vector
 
     ! Умножение матрицы на вектор
-subroutine multiply_matrix_vector(n, i1, i2, A, F, result)
-    integer, intent(in) :: n, i1, i2
-    real, intent(in) :: A(5, max_size)
-    real, intent(inout) :: F(max_size)  ! INOUT, так как F изменяется
-    real, intent(out) :: result(max_size)
-    integer :: i
+    subroutine multiply_matrix_vector(n, i1, i2, A, F, result)
+        integer, intent(in) :: n, i1, i2
+        real, intent(in) :: A(5, max_size)
+        real, intent(in) :: F(max_size)
+        real, intent(out) :: result(max_size)
+        integer :: i
 
-    do i = 1, n
-        result(i) = A(1, i) * F(i)
+        do i = 1, n
+            result(i) = A(1, i) * F(i)  ! Главная диагональ
 
-        if (i > 1) result(i) = result(i) + A(4, i-1) * F(i-1)  ! Первая нижняя диагональ
-        if (i > 2) result(i) = result(i) + A(5, i-2) * F(i-2)  ! Вторая нижняя диагональ
+            if (i > 1) result(i) = result(i) + A(4, i-1) * F(i-1)  ! Первая нижняя диагональ
+            if (i > 2) result(i) = result(i) + A(5, i-2) * F(i-2)  ! Вторая нижняя диагональ
 
-        if (i < n) result(i) = result(i) + A(2, i) * F(i+1)    ! Первая верхняя диагональ
-        if (i <= n-i2) result(i) = result(i) + A(3, i) * F(i+i2)  ! Вторая верхняя диагональ
-    end do
-
-    F(1:n) = result(1:n)  ! F обновляется
-end subroutine multiply_matrix_vector
-
+            if (i < n) result(i) = result(i) + A(2, i) * F(i+1)    ! Первая верхняя диагональ
+            if (i+i2 <= n) result(i) = result(i) + A(3, i) * F(i+i2)  ! Вторая верхняя диагональ
+        end do
+    end subroutine multiply_matrix_vector
 
     ! Запись вектора в текстовый файл
     subroutine write_vector(filename, n, F)
         character(len=*), intent(in) :: filename
         integer, intent(in) :: n
         real, intent(in) :: F(max_size)
-        integer :: io
+        integer :: io, i
 
         open(12, file=filename, status='replace', iostat=io)
         if (io /= 0) then
@@ -117,7 +114,9 @@ end subroutine multiply_matrix_vector
         end if
 
         ! Запись элементов вектора
-        write(12, '(F8.3)') F(1:n)
+        do i = 1, n
+            write(12, '(F15.8)') F(i)
+        end do
         close(12)
 
         print *, 'Result written to file: ', trim(filename)
